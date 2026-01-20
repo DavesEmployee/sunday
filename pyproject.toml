@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sunday-agent"
+version = "0.1.0"
+description = "Demo VLM + RAG agent using pydantic_ai and Langfuse"
+dependencies = [
+    "pydantic_ai",
+    "langfuse",
+    "pydantic-settings",
+    "python-dotenv",
+    "Pillow",
+    "lancedb",
+    "sentence-transformers",
+    "torch",
+    "rank_bm25",
+    "fastembed",
+    "requests",
+    "fastapi",
+    "uvicorn",
+]

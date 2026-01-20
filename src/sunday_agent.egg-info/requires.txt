@@ -1,0 +1,13 @@
+pydantic_ai
+langfuse
+pydantic-settings
+python-dotenv
+Pillow
+lancedb
+sentence-transformers
+torch
+rank_bm25
+fastembed
+requests
+fastapi
+uvicorn

@@ -1,0 +1,42 @@
+[
+  {
+    "query": "beginner lawn care starter kit",
+    "expected_slug": "spring-starter-kit"
+  },
+  {
+    "query": "repair dog urine spots in grass",
+    "expected_slug": "pet-patch"
+  },
+  {
+    "query": "weed killer concentrate refill",
+    "expected_slug": "dandelion-doom-weed-killer-concentrate-refill"
+  },
+  {
+    "query": "grass seed for shady lawns",
+    "expected_slug": "shade-select"
+  },
+  {
+    "query": "biological grub control",
+    "expected_slug": "grubgone-biological-insect-control-2-pack"
+  },
+  {
+    "query": "vegetable garden fertilizer",
+    "expected_slug": "sunday-organics-veggie-tomato"
+  },
+  {
+    "query": "post emergent weed killer",
+    "expected_slug": "weed-green-preemergent-and-post-emergent-weed-killer"
+  },
+  {
+    "query": "lawn starter fertilizer for seeding",
+    "expected_slug": "lawn-kickstart"
+  },
+  {
+    "query": "mosquito and tick yard control",
+    "expected_slug": "mosquito-deleto-nix-ticks-mixed-pack"
+  },
+  {
+    "query": "soil test kit",
+    "expected_slug": "sunday-soil-test-kit-and-analysis"
+  }
+]

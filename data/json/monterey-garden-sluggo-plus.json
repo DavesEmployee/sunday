@@ -1,0 +1,14 @@
+{
+  "url": "https://www.getsunday.com/shop/garden/monterey-garden-sluggo-plus",
+  "product_slug": "monterey-garden-sluggo-plus",
+  "product_name": "Monterey\u00ae Garden Sluggo\u00ae Plus",
+  "description": "Keep slugs and snails off your plants\n\nMonterey\u00ae Garden Sluggo\u00ae Plus is a fast-acting and long-lasting slug bait to deter slugs, snails, and insect pests in your garden.\n\nThis OMRI-listed bait targets and controls slugs, snails, earwigs, pillbugs, cutworms, and other common garden pests. Simply sprinkle the granules around your plants and let Sluggo\u00ae Plus work its magic. Powered by natural ingredients, this long-lasting bait remains effective even after light rain to safeguard your vegetables, ornamentals, and other outdoor plants.\n\nSunday partners with trusted, effective solutions that support your garden\u2019s health and harvest.",
+  "sections": {
+    "product_features": "Granular bio-based slug and snail bait\nEliminates slugs, snails, and garden insects\nMade with soil-based compounds\nIdeal for use around vegetables, ornamentals, and more\nOMRI-listed for organic gardening\nSafe for pets, birds, and beneficial insects when used as directed\nRemains effective after light rain",
+    "ingredients": "Iron phosphate: Disrupts slug and snail digestion, causing them to stop feeding\nSpinosad: Naturally derived from soil bacteria; kills a range of insect pests upon ingestion"
+  },
+  "image_url": "https://cdn.sanity.io/images/afv8yn22/production/bb94f58e93cd8053dd8a1ed6801067618b0a44bf-700x1000.webp?rect=0,150,700,700&w=1000&h=1000&fit=crop&auto=format&dpr=1",
+  "image_path": "data\\images\\monterey-garden-sluggo-plus.png",
+  "scraped_at_utc": "2026-01-19T17:27:24.515949+00:00",
+  "product_url": "https://www.getsunday.com/shop/garden/monterey-garden-sluggo-plus"
+}

@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: sunday-agent
+Version: 0.1.0
+Summary: Demo VLM + RAG agent using pydantic_ai and Langfuse
+Requires-Dist: pydantic_ai
+Requires-Dist: langfuse
+Requires-Dist: pydantic-settings
+Requires-Dist: python-dotenv
+Requires-Dist: Pillow
+Requires-Dist: lancedb
+Requires-Dist: sentence-transformers
+Requires-Dist: torch
+Requires-Dist: rank_bm25
+Requires-Dist: fastembed
+Requires-Dist: requests
+Requires-Dist: fastapi
+Requires-Dist: uvicorn

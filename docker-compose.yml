@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - TEXT_BACKEND=hashing
+      - OPENAI_BASE_URL=http://host.docker.internal:1234/v1
+    volumes:
+      - sunday_data:/app/data
+    ports:
+      - "8000:8000"
+    stdin_open: true
+    tty: true
+
+volumes:
+  sunday_data:
