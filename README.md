@@ -6,6 +6,10 @@
 3. Run the chatbot:
    `uv run -- python rag_chatbot.py`
 
+## Multi-agent demo
+
+`uv run -- python multiagent_chatbot.py`
+
 ## API Mode (for deployment demos)
 
 Start a minimal HTTP API:
