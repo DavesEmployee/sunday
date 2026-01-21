@@ -6,7 +6,6 @@ Minimal HTTP API for the RAG chatbot.
 from __future__ import annotations
 
 import uuid
-from typing import Dict, List, Optional
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -16,12 +15,12 @@ from .chat_runtime import _run_with_retries, langfuse, session_id_var
 
 
 app = FastAPI(title="Sunday RAG Chatbot")
-_history_store: Dict[str, List[object]] = {}
+_history_store: dict[str, list[object]] = {}
 
 
 class ChatRequest(BaseModel):
     message: str
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -30,7 +29,7 @@ class ChatResponse(BaseModel):
 
 
 @app.get("/health")
-def health() -> Dict[str, str]:
+def health() -> dict[str, str]:
     return {"status": "ok"}
 
 

@@ -5,7 +5,6 @@ import hashlib
 import os
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import lancedb
 from rank_bm25 import BM25Okapi
@@ -17,12 +16,12 @@ VECTOR_DIR = DATA_DIR / "vector"
 EMBEDDER_META_PATH = VECTOR_DIR / "text_embedder.json"
 
 
-def _tokenize(text: str) -> List[str]:
+def _tokenize(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", text.lower())
 
 
-def _doc_text(doc: Dict[str, object]) -> str:
-    parts: List[str] = []
+def _doc_text(doc: dict[str, object]) -> str:
+    parts: list[str] = []
     for key in ("product_name", "description"):
         val = doc.get(key)
         if isinstance(val, str) and val.strip():
@@ -35,18 +34,18 @@ def _doc_text(doc: Dict[str, object]) -> str:
     return "\n\n".join(parts)
 
 
-def _l2_normalize(vec: List[float]) -> List[float]:
+def _l2_normalize(vec: list[float]) -> list[float]:
     norm = sum(v * v for v in vec) ** 0.5
     if norm == 0:
         return vec
     return [v / norm for v in vec]
 
 
-def _clean_metadata(meta: Dict[str, object]) -> Dict[str, object]:
+def _clean_metadata(meta: dict[str, object]) -> dict[str, object]:
     return {k: v for k, v in meta.items() if v is not None}
 
 
-def _token_overlap_score(query_tokens: List[str], text: str) -> float:
+def _token_overlap_score(query_tokens: list[str], text: str) -> float:
     if not text:
         return 0.0
     tokens = set(_tokenize(text))
@@ -82,7 +81,7 @@ class TextEmbedder:
         self,
         model_name: str,
         fallback_dim: int = 2048,
-        force_backend: Optional[str] = None,
+        force_backend: str | None = None,
     ) -> None:
         self.backend = force_backend or "hashing"
         self.model_name = model_name
@@ -120,7 +119,7 @@ class TextEmbedder:
                 self.backend = "hashing"
                 return
 
-    def _hash_embed(self, text: str) -> List[float]:
+    def _hash_embed(self, text: str) -> list[float]:
         vec = [0.0] * self.dim
         for token in _tokenize(text):
             digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
@@ -128,7 +127,7 @@ class TextEmbedder:
             vec[idx] += 1.0
         return _l2_normalize(vec)
 
-    def encode(self, texts: List[str]) -> List[List[float]]:
+    def encode(self, texts: list[str]) -> list[list[float]]:
         if self.backend == "sentence_transformers":
             embeddings = self.model.encode(
                 texts,
@@ -146,7 +145,7 @@ class TextEmbedder:
 
 
 class ImageEmbedder:
-    def __init__(self, model_name: Optional[str]) -> None:
+    def __init__(self, model_name: str | None) -> None:
         self.available = False
         self.model = None
         if not model_name:
@@ -161,7 +160,7 @@ class ImageEmbedder:
             self.available = False
             self.model = None
 
-    def encode_path(self, path: str) -> Optional[List[float]]:
+    def encode_path(self, path: str) -> list[float] | None:
         if not self.available:
             return None
         emb = self.model.encode(path, normalize_embeddings=True)
@@ -170,7 +169,7 @@ class ImageEmbedder:
 
 def build_indexes(
     text_model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-    image_model_name: Optional[str] = None,
+    image_model_name: str | None = None,
     reset: bool = False,
     text_backend: str = "hashing",
 ) -> None:
@@ -180,7 +179,7 @@ def build_indexes(
     if not json_files:
         raise FileNotFoundError(f"No JSON files found in {JSON_DIR}")
 
-    docs: List[Dict[str, object]] = []
+    docs: list[dict[str, object]] = []
 
     for path in json_files:
         data = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
@@ -242,9 +241,9 @@ def build_indexes(
         )
     db.create_table("products_text", text_rows, mode="overwrite")
 
-    image_ids: List[str] = []
-    image_embeddings: List[List[float]] = []
-    image_metadatas: List[Dict[str, object]] = []
+    image_ids: list[str] = []
+    image_embeddings: list[list[float]] = []
+    image_metadatas: list[dict[str, object]] = []
     for d in docs:
         image_path = d.get("image_path")
         if not isinstance(image_path, str):
@@ -288,8 +287,8 @@ class HybridRetriever:
         if not json_files:
             raise FileNotFoundError(f"No JSON files found in {JSON_DIR}")
 
-        docs: List[Dict[str, object]] = []
-        tokenized: List[List[str]] = []
+        docs: list[dict[str, object]] = []
+        tokenized: list[list[str]] = []
         for path in json_files:
             data = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
             if not isinstance(data, dict):
@@ -337,7 +336,7 @@ class HybridRetriever:
         self.db = _get_lancedb(vector_dir)
         self.text_table = self.db.open_table("products_text")
 
-    def query(self, text: str, top_k: int = 3, rerank: bool = True) -> List[Dict[str, object]]:
+    def query(self, text: str, top_k: int = 3, rerank: bool = True) -> list[dict[str, object]]:
         tokens = _tokenize(text)
         bm25_scores = self.bm25.get_scores(tokens)
         bm25_rank = sorted(
@@ -354,7 +353,7 @@ class HybridRetriever:
         )
         vec_ids = [r.get("slug") for r in vec_results if r.get("slug")]
 
-        rrf_scores: Dict[str, float] = {}
+        rrf_scores: dict[str, float] = {}
         for rank, (idx, _) in enumerate(bm25_rank, start=1):
             slug = self.docs[idx]["slug"]
             rrf_scores[slug] = rrf_scores.get(slug, 0.0) + 1.0 / (60 + rank)
@@ -364,7 +363,7 @@ class HybridRetriever:
 
         ranked = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
         if not rerank:
-            results: List[Dict[str, object]] = []
+            results: list[dict[str, object]] = []
             for slug, _score in ranked[:top_k]:
                 doc = self.doc_map.get(slug)
                 if not doc:

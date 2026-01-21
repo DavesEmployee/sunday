@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 import platform
 from importlib.util import find_spec
 
@@ -26,7 +25,7 @@ _MODEL = None
 _PROCESSOR = None
 
 
-def _load_model() -> Optional[str]:
+def _load_model() -> str | None:
     global _MODEL, _PROCESSOR
     if _MODEL is not None and _PROCESSOR is not None:
         return None
@@ -43,7 +42,6 @@ def _load_model() -> Optional[str]:
             except Exception:
                 pass
         from transformers import AutoImageProcessor, AutoModelForImageClassification
-        import torch
 
         _PROCESSOR = AutoImageProcessor.from_pretrained(settings.plant_id_model)
         _MODEL = AutoModelForImageClassification.from_pretrained(settings.plant_id_model)
@@ -53,7 +51,7 @@ def _load_model() -> Optional[str]:
         return str(exc)
 
 
-def identify_plant(image_url: str) -> Optional[PlantIdentification]:
+def identify_plant(image_url: str) -> PlantIdentification | None:
     err = _load_model()
     if err:
         return None

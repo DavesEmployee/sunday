@@ -7,21 +7,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
-import sys
-from pathlib import Path as _Path
 
-repo_root = _Path(__file__).resolve().parents[1]
-if str(repo_root) not in sys.path:
-    sys.path.insert(0, str(repo_root))
-
-from scripts.scrape_sunday_shop_all import (
-    collect_product_urls,
-    collect_product_urls_playwright,
-    load_html,
-)
+def _bootstrap_repo_root() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
 
 
 def slug_from_url(url: str) -> str:
@@ -29,6 +23,13 @@ def slug_from_url(url: str) -> str:
 
 
 def main() -> None:
+    _bootstrap_repo_root()
+    from scripts.scrape_sunday_shop_all import (
+        collect_product_urls,
+        collect_product_urls_playwright,
+        load_html,
+    )
+
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "url",

@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 import re
-from typing import Iterable, List, Optional, Set
+from collections.abc import Iterable
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -62,7 +62,7 @@ def fetch_html_playwright(url: str, timeout_ms: int) -> str:
         return html
 
 
-def load_html(url: str, renderer: str, timeout_s: int, html_file: Optional[str]) -> str:
+def load_html(url: str, renderer: str, timeout_s: int, html_file: str | None) -> str:
     if html_file:
         return Path(html_file).read_text(encoding="utf-8", errors="ignore")
     if renderer == "always":
@@ -92,13 +92,13 @@ def is_product_url(url: str) -> bool:
     return True
 
 
-def collect_product_urls(html: str, base_url: str) -> List[str]:
+def collect_product_urls(html: str, base_url: str) -> list[str]:
     urls = {u.split("#", 1)[0] for u in iter_shop_links(html, base_url)}
     products = sorted(u for u in urls if is_product_url(u))
     return products
 
 
-def collect_product_urls_playwright(url: str, timeout_s: int) -> List[str]:
+def collect_product_urls_playwright(url: str, timeout_s: int) -> list[str]:
     try:
         from playwright.sync_api import sync_playwright
     except Exception as e:
@@ -107,7 +107,7 @@ def collect_product_urls_playwright(url: str, timeout_s: int) -> List[str]:
             "Install with:\n  uv pip install playwright\n  playwright install chromium\n"
         ) from e
 
-    urls: Set[str] = set()
+    urls: set[str] = set()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -123,8 +123,8 @@ def collect_product_urls_playwright(url: str, timeout_s: int) -> List[str]:
         except Exception:
             pass
 
-        def page_numbers() -> Set[int]:
-            nums: Set[int] = set()
+        def page_numbers() -> set[int]:
+            nums: set[int] = set()
             btns = page.locator('button[aria-label^="Page "]')
             for i in range(btns.count()):
                 aria = btns.nth(i).get_attribute("aria-label") or ""
@@ -165,10 +165,10 @@ def collect_product_urls_playwright(url: str, timeout_s: int) -> List[str]:
 
 
 def run_scraper(
-    urls: List[str],
+    urls: list[str],
     renderer: str,
     timeout_s: int,
-    limit: Optional[int],
+    limit: int | None,
     skip_existing: bool,
 ) -> None:
     count = 0

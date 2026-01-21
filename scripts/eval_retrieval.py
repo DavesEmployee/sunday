@@ -7,27 +7,24 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
-from typing import Dict, List
-
 import sys
-from pathlib import Path as _Path
-
-repo_root = _Path(__file__).resolve().parents[1]
-if str(repo_root) not in sys.path:
-    sys.path.insert(0, str(repo_root))
-
-from src.retriever import HybridRetriever
+from pathlib import Path
 
 
-def load_eval_cases(path: Path) -> List[Dict[str, object]]:
+def _bootstrap_repo_root() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+
+
+def load_eval_cases(path: Path) -> list[dict[str, object]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, list):
         raise ValueError("Eval cases must be a list of objects.")
     return data
 
 
-def compute_metrics(results: List[Dict[str, object]], expected_slug: str) -> Dict[str, int]:
+def compute_metrics(results: list[dict[str, object]], expected_slug: str) -> dict[str, int]:
     slugs = [r.get("slug") for r in results if r.get("slug")]
     return {
         "hit_at_1": int(expected_slug in slugs[:1]),
@@ -36,6 +33,9 @@ def compute_metrics(results: List[Dict[str, object]], expected_slug: str) -> Dic
 
 
 def main() -> None:
+    _bootstrap_repo_root()
+    from src.retriever import HybridRetriever
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-file", default="data/eval/retrieval_cases.json")
     ap.add_argument("--top-k", type=int, default=3)

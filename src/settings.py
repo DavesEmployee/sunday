@@ -13,6 +13,7 @@ class AppSettings(BaseSettings):
     algolia_app_id: str = "H8BCLEKQVV"
     algolia_api_key: str = "5e2db58799b436ab448f2f3b6dc0696f"
     algolia_ct_products_index: str = "prod_ct_products"
+    langfuse_prompt_name: str = "rag-chatbot"
     plant_id_model: str = "juppy44/plant-identification-2m-vit-b"
     plant_id_confidence_threshold: float = 0.55
 

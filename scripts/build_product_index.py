@@ -8,18 +8,20 @@ Writes:
 """
 
 import argparse
-
 import sys
 from pathlib import Path
 
-repo_root = Path(__file__).resolve().parents[1]
-if str(repo_root) not in sys.path:
-    sys.path.insert(0, str(repo_root))
 
-from src.retriever import build_indexes
+def _bootstrap_repo_root() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
 
 
 def main() -> None:
+    _bootstrap_repo_root()
+    from src.retriever import build_indexes
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--reset", action="store_true", help="Reset existing vector collections")
     ap.add_argument("--text-model", default="sentence-transformers/all-MiniLM-L6-v2")

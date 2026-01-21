@@ -2,40 +2,26 @@
 """
 scrape_sunday_product.py
 
-This version fixes the "still no FAQ" problem by adding a SIMPLE, VERY ROBUST
-text-based fallback that works on the static HTML you uploaded.
+Scrape a single Sunday product page into JSON (data/json/<slug>.json) and
+download the product image (data/images/<slug>.png).
 
-Why prior versions missed it:
-- The FAQ block on some pages is not a clean "heading tag -> <p>/<li>" pattern.
-  It's often an accordion/table-like structure where Q/A are in divs/spans with
-  line breaks, not <p>/<li>, and our DOM-walk missed the content.
-
-What v6 does:
-1) Keep the dynamic heading-based extraction for most sections.
-2) Add FAQ fallback #1 (DOM): still attempts to find a node containing "Helpful Tips" etc.
-3) Add FAQ fallback #2 (TEXT): extract FAQ from the MAIN text using markers:
-     - Look for "FAQ" near "Helpful Tips from ... Advisors"
-     - Capture until a footer stop marker OR end of main
-   This works reliably for your uploaded wand-sprayer HTML.
-
-Also:
-- Description trimming (no next-header bleed) remains.
-- Image download remains.
-- NEW: you can point the script at a local HTML file with --html-file, which is
-  useful for debugging in interview/demo environments.
+Highlights:
+- Dynamic heading-based section extraction with FAQ fallback for accordion text.
+- Description trimming to avoid bleeding into the next section.
+- Optional HTML input for offline debugging with --html-file.
 
 Usage:
-  python scrape_sunday_product.py "https://www.getsunday.com/shop/lawn-care/sunday-weed-pest-wand-sprayer"
-  python scrape_sunday_product.py --renderer always "https://..."
-  python scrape_sunday_product.py --html-file "page.html" "https://example.com/original-url"
+  python scripts/scrape_sunday_product.py "https://www.getsunday.com/shop/lawn-care/sunday-weed-pest-wand-sprayer"
+  python scripts/scrape_sunday_product.py --renderer always "https://..."
+  python scripts/scrape_sunday_product.py --html-file "page.html" "https://example.com/original-url"
 
 Dependencies:
-  pip install requests beautifulsoup4
+  uv pip install requests beautifulsoup4
 Optional JS rendering:
-  pip install playwright
+  uv pip install playwright
   playwright install chromium
 Optional PNG conversion:
-  pip install pillow
+  uv pip install pillow
 """
 
 from __future__ import annotations
@@ -46,7 +32,6 @@ import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
 from urllib.parse import urlparse, urljoin
 
 import requests
@@ -198,8 +183,8 @@ def build_soup(html: str) -> BeautifulSoup:
     return soup
 
 
-def parse_json_ld_product(soup: BeautifulSoup) -> Dict[str, object]:
-    out: Dict[str, object] = {}
+def parse_json_ld_product(soup: BeautifulSoup) -> dict[str, object]:
+    out: dict[str, object] = {}
     for tag in soup.find_all("script", attrs={"type": "application/ld+json"}):
         raw = tag.string
         if not raw:
@@ -221,7 +206,7 @@ def parse_json_ld_product(soup: BeautifulSoup) -> Dict[str, object]:
     return out
 
 
-def extract_product_name(soup: BeautifulSoup, jsonld: Dict[str, object]) -> Optional[str]:
+def extract_product_name(soup: BeautifulSoup, jsonld: dict[str, object]) -> str | None:
     h1 = soup.find("h1")
     if h1:
         t = clean(h1.get_text(" ", strip=True))
@@ -250,7 +235,7 @@ def looks_like_heading(text: str) -> bool:
     return 1 <= len(words) <= 10
 
 
-def inline_heading_container(tag: Tag) -> Optional[Tag]:
+def inline_heading_container(tag: Tag) -> Tag | None:
     for anc in tag.parents:
         if isinstance(anc, Tag) and anc.name == "div":
             if any(
@@ -278,7 +263,7 @@ def is_inline_heading_candidate(tag: Tag, txt: str) -> bool:
     return True
 
 
-def heading_text(tag: Tag) -> Optional[str]:
+def heading_text(tag: Tag) -> str | None:
     if tag.name in {"h2", "h3", "h4"}:
         txt = norm_text(tag.get_text(" ", strip=True))
         if txt and not is_blacklisted_heading(txt):
@@ -293,9 +278,9 @@ def heading_text(tag: Tag) -> Optional[str]:
     return None
 
 
-def iter_heading_tags_in_main(soup: BeautifulSoup) -> List[Tag]:
+def iter_heading_tags_in_main(soup: BeautifulSoup) -> list[Tag]:
     root = soup.find("main") or soup.body or soup
-    tags: List[Tag] = []
+    tags: list[Tag] = []
     h1 = soup.find("h1")
     after_h1 = False
     for t in root.find_all(["h1", "h2", "h3", "h4", "strong", "span", "button"]):
@@ -365,7 +350,7 @@ def maybe_shorten_description(desc: str) -> str:
 
 
 def collect_section_content(start_heading_tag: Tag, heading_tags_set: set[Tag]) -> str:
-    parts: List[str] = []
+    parts: list[str] = []
     start = start_heading_tag
     for el in start.next_elements:
         if el == start:
@@ -384,7 +369,7 @@ def collect_section_content(start_heading_tag: Tag, heading_tags_set: set[Tag]) 
                     parts.append(txt)
 
     # De-dupe adjacent repeats
-    dedup: List[str] = []
+    dedup: list[str] = []
     for p in parts:
         if not dedup or dedup[-1] != p:
             dedup.append(p)
@@ -392,7 +377,7 @@ def collect_section_content(start_heading_tag: Tag, heading_tags_set: set[Tag]) 
     return strip_trailing_heading_line(clean("\n".join(dedup)))
 
 
-def find_add_to_cart_tag(soup: BeautifulSoup) -> Optional[Tag]:
+def find_add_to_cart_tag(soup: BeautifulSoup) -> Tag | None:
     root = soup.find("main") or soup.body or soup
     for el in root.find_all(["button", "a"]):
         if "add to cart" in norm_lower(el.get_text(" ", strip=True)):
@@ -400,7 +385,7 @@ def find_add_to_cart_tag(soup: BeautifulSoup) -> Optional[Tag]:
     return None
 
 
-def extract_description(soup: BeautifulSoup, jsonld: Dict[str, object]) -> Optional[str]:
+def extract_description(soup: BeautifulSoup, jsonld: dict[str, object]) -> str | None:
     heading_tags = iter_heading_tags_in_main(soup)
     heading_set = set(heading_tags)
 
@@ -420,8 +405,8 @@ def extract_description(soup: BeautifulSoup, jsonld: Dict[str, object]) -> Optio
             return True
         return False
 
-    first_section_tag: Optional[Tag] = None
-    first_section_text: Optional[str] = None
+    first_section_tag: Tag | None = None
+    first_section_text: str | None = None
     for t in heading_tags:
         ht = heading_text(t)
         if ht and is_section_boundary(ht):
@@ -429,7 +414,7 @@ def extract_description(soup: BeautifulSoup, jsonld: Dict[str, object]) -> Optio
             first_section_text = ht
             break
 
-    parts: List[str] = []
+    parts: list[str] = []
     if first_section_tag:
         headline_tag = first_section_tag.find_previous(["h2", "h3", "h4"])
         if headline_tag:
@@ -486,7 +471,7 @@ def extract_description(soup: BeautifulSoup, jsonld: Dict[str, object]) -> Optio
     return None
 
 
-def trim_faq(text: Optional[str]) -> Optional[str]:
+def trim_faq(text: str | None) -> str | None:
     if not text:
         return None
     cut = None
@@ -501,7 +486,7 @@ def trim_faq(text: Optional[str]) -> Optional[str]:
     return clean(text) or None
 
 
-def faq_text_fallback(main_text: str) -> Optional[str]:
+def faq_text_fallback(main_text: str) -> str | None:
     """
     Robust text fallback based on markers.
     Works on your uploaded HTML snippet.
@@ -519,7 +504,6 @@ def faq_text_fallback(main_text: str) -> Optional[str]:
         return None
 
     sub = txt[idx_faq:]
-    sub_low = sub.lower()
 
     # Prefer starting at "Helpful Tips" if present
     m = re.search(r"(?i)helpful tips.*advis", sub)
@@ -542,8 +526,8 @@ def faq_text_fallback(main_text: str) -> Optional[str]:
     return clean(block) or None
 
 
-def build_sections(soup: BeautifulSoup) -> Dict[str, str]:
-    sections: Dict[str, str] = {}
+def build_sections(soup: BeautifulSoup) -> dict[str, str]:
+    sections: dict[str, str] = {}
     used: set[str] = set()
 
     heading_tags = iter_heading_tags_in_main(soup)
@@ -597,7 +581,7 @@ def build_sections(soup: BeautifulSoup) -> Dict[str, str]:
     return sections
 
 
-def first_image_url(soup: BeautifulSoup, base_url: str, jsonld: Dict[str, object]) -> Optional[str]:
+def first_image_url(soup: BeautifulSoup, base_url: str, jsonld: dict[str, object]) -> str | None:
     imgs = jsonld.get("image")
     if isinstance(imgs, list) and imgs and isinstance(imgs[0], str) and imgs[0].startswith("http"):
         return imgs[0]
@@ -634,7 +618,7 @@ def download_image_to_png(img_url: str, out_path: Path, timeout_s: int = 30) -> 
         out_path.write_bytes(data)
 
 
-def scrape(url: str, renderer: str, timeout_s: int, html_file: Optional[str]) -> Dict[str, object]:
+def scrape(url: str, renderer: str, timeout_s: int, html_file: str | None) -> dict[str, object]:
     if html_file:
         html = Path(html_file).read_text(encoding="utf-8", errors="ignore")
     else:
