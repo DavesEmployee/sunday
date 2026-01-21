@@ -19,5 +19,7 @@ dependencies = [
     "fastembed",
     "requests",
     "fastapi",
+    "transformers",
+    "torchvision",
     "uvicorn",
 ]

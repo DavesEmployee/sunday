@@ -183,7 +183,7 @@ def run_scraper(
                 continue
         cmd = [
             sys.executable,
-            "scrape_sunday_product_dynamic_v6.py",
+            str(Path(__file__).with_name("scrape_sunday_product.py")),
             "--renderer",
             renderer,
             "--timeout-s",

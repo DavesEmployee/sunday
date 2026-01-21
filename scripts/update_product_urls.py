@@ -10,7 +10,14 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse
 
-from scrape_sunday_shop_all import (
+import sys
+from pathlib import Path as _Path
+
+repo_root = _Path(__file__).resolve().parents[1]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
+from scripts.scrape_sunday_shop_all import (
     collect_product_urls,
     collect_product_urls_playwright,
     load_html,

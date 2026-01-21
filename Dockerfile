@@ -19,4 +19,4 @@ COPY . /app
 RUN chmod +x /app/scripts/docker_entrypoint.sh
 
 ENTRYPOINT ["/app/scripts/docker_entrypoint.sh"]
-CMD ["uv", "run", "rag_chatbot.py"]
+CMD ["uv", "run", "scripts/rag_chatbot.py"]

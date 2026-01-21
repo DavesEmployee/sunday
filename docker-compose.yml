@@ -8,6 +8,7 @@ services:
       - TEXT_BACKEND=hashing
       - OPENAI_BASE_URL=http://host.docker.internal:1234/v1
     volumes:
+      - .:/app:cached
       - sunday_data:/app/data
     ports:
       - "8000:8000"

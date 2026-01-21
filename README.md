@@ -2,19 +2,19 @@
 
 1. Start LM Studio (OpenAI-compatible server on `http://localhost:1234/v1`).
 2. Build the index if needed:
-   `uv run -- python build_product_index.py --reset`
+   `uv run -- python scripts/build_product_index.py --reset`
 3. Run the chatbot:
-   `uv run -- python rag_chatbot.py`
+   `uv run -- python scripts/rag_chatbot.py`
 
 ## Multi-agent demo
 
-`uv run -- python multiagent_chatbot.py`
+`uv run -- python scripts/multiagent_chatbot.py`
 
 ## API Mode (for deployment demos)
 
 Start a minimal HTTP API:
 
-`uv run -- python -m uvicorn api_server:app --host 0.0.0.0 --port 8000`
+`uv run -- python -m uvicorn src.api_server:app --host 0.0.0.0 --port 8000`
 
 POST a message:
 
@@ -33,7 +33,7 @@ docker compose up --build
 For API mode in Docker:
 
 ```
-docker compose run --rm app uv run -- python -m uvicorn api_server:app --host 0.0.0.0 --port 8000
+docker compose run --rm app uv run -- python -m uvicorn src.api_server:app --host 0.0.0.0 --port 8000
 ```
 
 ## Env Vars

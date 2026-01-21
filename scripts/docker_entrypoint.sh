@@ -9,7 +9,7 @@ fi
 if [ ! -d "data/vector/products_text.lance" ]; then
   TEXT_BACKEND="${TEXT_BACKEND:-hashing}"
   echo "Building vector index (backend: ${TEXT_BACKEND})..."
-  uv run -- python build_product_index.py --reset --text-backend "${TEXT_BACKEND}"
+  uv run -- python scripts/build_product_index.py --reset --text-backend "${TEXT_BACKEND}"
 else
   echo "Vector index already present."
 fi

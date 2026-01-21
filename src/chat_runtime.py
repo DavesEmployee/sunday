@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-RAG chatbot using Pydantic AI + hybrid search over product JSONs.
-"""
-
 from __future__ import annotations
 
 from typing import Dict, List, Optional
@@ -15,12 +10,12 @@ from urllib.parse import urlparse
 
 import requests
 from langfuse import propagate_attributes
-
 from pydantic_ai import Agent, RunContext
 
-from src.agent import build_langfuse_client, build_model, build_provider
-from src.retriever import HybridRetriever
-from src.settings import AppSettings
+from .agent import build_langfuse_client, build_model, build_provider
+from .retriever import HybridRetriever
+from .settings import AppSettings
+from .vision import identify_plant
 
 
 SYSTEM_PROMPT = (
@@ -31,7 +26,9 @@ SYSTEM_PROMPT = (
     "Choose a single best option and explain why it fits the user's situation. "
     "Only mention features that are relevant to the context. "
     "Ask a brief follow-up question when it would help narrow the recommendation. "
-    "Include image_path only if it helps the user."
+    "Include image_path only if it helps the user. "
+    "If the user provides a plant image URL, always call identify_plant_image to "
+    "classify it, then recommend the most relevant product based on the identified plant."
 )
 
 
@@ -92,6 +89,17 @@ def _algolia_headers() -> Dict[str, str]:
 
 def _algolia_index() -> str:
     return settings.algolia_ct_products_index
+
+
+def _extract_image_url(text: str) -> Optional[str]:
+    match = re.search(r"(https?://\\S+)", text)
+    if not match:
+        return None
+    url = match.group(1).rstrip(").,]")
+    lower = url.lower()
+    if lower.endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
+        return url
+    return None
 
 
 provider = build_provider(base_url=settings.openai_base_url, api_key=settings.openai_api_key)
@@ -161,6 +169,30 @@ def lookup_price(ctx: RunContext, product_url: str) -> Dict[str, object]:
         except Exception as exc:
             span.update(output={"error": str(exc)})
             return {"product_url": product_url, "error": "request_failed"}
+
+
+@agent.tool
+def identify_plant_image(ctx: RunContext, image_url: str) -> Dict[str, object]:
+    """Identify a plant from an image URL using the plant identification model."""
+    session_id = session_id_var.get()
+    with langfuse.start_as_current_observation(
+        as_type="embedding",
+        name="identify_plant_image",
+        input=image_url,
+        metadata={"session_id": session_id},
+    ) as span:
+        try:
+            result = identify_plant(image_url)
+            if result is None:
+                payload = {"error": "model_unavailable"}
+                span.update(output=payload)
+                return payload
+            payload = {"label": result.label, "score": result.score}
+            span.update(output=payload)
+            return payload
+        except Exception as exc:
+            span.update(output={"error": str(exc)})
+            return {"error": "request_failed"}
 
 
 @agent.tool
@@ -407,7 +439,7 @@ def _run_with_retries(user_message: str, message_history: Optional[List[object]]
     return agent.run_sync(user_message, message_history=message_history)
 
 
-def main() -> None:
+def run_cli() -> None:
     message_history = None
     session_id = str(uuid.uuid4())
     session_id_var.set(session_id)
@@ -419,6 +451,16 @@ def main() -> None:
                 continue
             if user_message.lower() in {"exit", "quit"}:
                 break
+            image_url = _extract_image_url(user_message)
+            if image_url:
+                plant = identify_plant_image(None, image_url)
+                plant_label = plant.get("label")
+                if isinstance(plant_label, str):
+                    user_message = (
+                        f"{user_message}\n\n"
+                        f"Identified plant: {plant_label}. "
+                        "Recommend the best Sunday product for this plant."
+                    )
             with langfuse.start_as_current_observation(
                 as_type="agent",
                 name="rag_chatbot",
@@ -430,7 +472,3 @@ def main() -> None:
             history = result.all_messages()
             message_history = history[-40:] if history else None
             print(f"\nAssistant:\n{result.output}\n")
-
-
-if __name__ == "__main__":
-    main()

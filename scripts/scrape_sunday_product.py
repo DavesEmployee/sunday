@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-scrape_sunday_product_dynamic_v6.py
+scrape_sunday_product.py
 
 This version fixes the "still no FAQ" problem by adding a SIMPLE, VERY ROBUST
 text-based fallback that works on the static HTML you uploaded.
@@ -25,9 +25,9 @@ Also:
   useful for debugging in interview/demo environments.
 
 Usage:
-  python scrape_sunday_product_dynamic_v6.py "https://www.getsunday.com/shop/lawn-care/sunday-weed-pest-wand-sprayer"
-  python scrape_sunday_product_dynamic_v6.py --renderer always "https://..."
-  python scrape_sunday_product_dynamic_v6.py --html-file "page.html" "https://example.com/original-url"
+  python scrape_sunday_product.py "https://www.getsunday.com/shop/lawn-care/sunday-weed-pest-wand-sprayer"
+  python scrape_sunday_product.py --renderer always "https://..."
+  python scrape_sunday_product.py --html-file "page.html" "https://example.com/original-url"
 
 Dependencies:
   pip install requests beautifulsoup4

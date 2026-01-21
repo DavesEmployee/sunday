@@ -12,11 +12,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from langfuse import propagate_attributes
 
-from rag_chatbot import (
-    _run_with_retries,
-    langfuse,
-    session_id_var,
-)
+from .chat_runtime import _run_with_retries, langfuse, session_id_var
 
 
 app = FastAPI(title="Sunday RAG Chatbot")
@@ -55,4 +51,3 @@ def chat(req: ChatRequest) -> ChatResponse:
     messages = result.all_messages()
     _history_store[session_id] = messages[-40:] if messages else []
     return ChatResponse(session_id=session_id, response=str(result.output))
-

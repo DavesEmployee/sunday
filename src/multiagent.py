@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 import contextvars
 import re
 import time
+import uuid
 
 import requests
 from langfuse import propagate_attributes
@@ -12,6 +13,7 @@ from pydantic_ai import Agent, RunContext
 from .agent import build_langfuse_client, build_model, build_provider
 from .retriever import HybridRetriever
 from .settings import AppSettings
+from .vision import identify_plant
 
 
 settings = AppSettings()
@@ -262,14 +264,24 @@ class MultiAgentOrchestrator:
                 "You provide short safety guidance when chemicals or pesticides are involved."
             ),
         )
+        self.vision_agent = Agent(
+            model=model,
+            system_prompt=(
+                "You identify plants from image URLs. Call identify_plant_image and "
+                "return the label and confidence. If confidence is low, say so."
+            ),
+        )
         self.planner_agent = Agent(
             model=model,
             system_prompt=(
                 "You are an orchestration agent. Decide which specialist agents to call "
-                "(product, weather, price, safety) based on the user question. "
+                "(product, weather, price, safety, vision) based on the user question. "
                 "If the user asks for a product AND price, call product_agent first, then "
                 "call price_agent with the returned product_url, and include the price in "
-                "the same response. Use the tools to call agents, then synthesize a final response."
+                "the same response. "
+                "If the user provides an image URL, call vision_agent to identify the plant, "
+                "then call product_agent to recommend a relevant product. "
+                "Use the tools to call agents, then synthesize a final response."
             ),
         )
 
@@ -339,9 +351,34 @@ class MultiAgentOrchestrator:
                 span.update(output=payload)
             return payload
 
+        @self.vision_agent.tool
+        def identify_plant_image(ctx: RunContext, image_url: str) -> Dict[str, object]:
+            session_id = session_id_var.get()
+            with langfuse.start_as_current_observation(
+                as_type="embedding",
+                name="identify_plant_image",
+                input=image_url,
+                metadata={"session_id": session_id},
+            ) as span:
+                try:
+                    result = identify_plant(image_url)
+                    if result is None:
+                        payload = {"error": "model_unavailable"}
+                        span.update(output=payload)
+                        return payload
+                    payload = {
+                        "label": result.label,
+                        "score": result.score,
+                        "low_confidence": result.score < settings.plant_id_confidence_threshold,
+                    }
+                    span.update(output=payload)
+                    return payload
+                except Exception as exc:
+                    span.update(output={"error": str(exc)})
+                    return {"error": "request_failed"}
+
         @self.planner_agent.tool
         def call_product_agent(ctx: RunContext, query: str) -> str:
-            """Call product agent to return product_name, product_url, reason as JSON."""
             session_id = session_id_var.get()
             with langfuse.start_as_current_observation(
                 as_type="agent",
@@ -355,7 +392,6 @@ class MultiAgentOrchestrator:
 
         @self.planner_agent.tool
         def call_weather_agent(ctx: RunContext, query: str) -> str:
-            """Call weather agent to summarize forecast for timing guidance."""
             session_id = session_id_var.get()
             with langfuse.start_as_current_observation(
                 as_type="agent",
@@ -369,7 +405,6 @@ class MultiAgentOrchestrator:
 
         @self.planner_agent.tool
         def call_price_agent(ctx: RunContext, query: str) -> str:
-            """Call price agent with a product_url to fetch pricing."""
             session_id = session_id_var.get()
             with langfuse.start_as_current_observation(
                 as_type="agent",
@@ -383,7 +418,6 @@ class MultiAgentOrchestrator:
 
         @self.planner_agent.tool
         def call_safety_agent(ctx: RunContext, query: str) -> str:
-            """Call safety agent for chemical/pesticide guidance."""
             session_id = session_id_var.get()
             with langfuse.start_as_current_observation(
                 as_type="agent",
@@ -392,6 +426,19 @@ class MultiAgentOrchestrator:
                 metadata={"session_id": session_id},
             ) as span:
                 result = _run_with_retries(self.safety_agent, query, None)
+                span.update(output=str(result.output))
+            return str(result.output)
+
+        @self.planner_agent.tool
+        def call_vision_agent(ctx: RunContext, query: str) -> str:
+            session_id = session_id_var.get()
+            with langfuse.start_as_current_observation(
+                as_type="agent",
+                name="vision_agent",
+                input=query,
+                metadata={"session_id": session_id},
+            ) as span:
+                result = _run_with_retries(self.vision_agent, query, None)
                 span.update(output=str(result.output))
             return str(result.output)
 
