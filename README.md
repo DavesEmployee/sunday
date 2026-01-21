@@ -1,12 +1,12 @@
 # Quickstart Instructions
 
 Example session:
-```text
-uv run -- python scripts/rag_chatbot.py
-warning: No `requires-python` value found in the workspace. Defaulting to `>=3.10`.
-You: hi what is a good lawn care product for a beginner trying to spruce up their lawn?
 
-Assistant:
+`uv run -- python scripts/rag_chatbot.py`
+
+**USER:** hi what is a good lawn care product for a beginner trying to spruce up their lawn?
+
+**ASSISTANT:**  
 Based on your needs as a beginner, I recommend the **Lawn Vitality Liquid Lawn Fertilizer**. It's ideal for beginners because:
 
 - It’s easy to apply with a hose-on system (no spreading or measuring required)
@@ -18,15 +18,15 @@ It's also designed for regular maintenance, so you can use it consistently witho
 
 Would you like me to check the current price or help with application timing based on your location?
 
-You: yes please, find the price and give me application timing given that im in Boston Ma
+**USER:** yes please, find the price and give me application timing given that im in Boston Ma
 
-Assistant:
+**ASSISTANT:**  
 Here’s the information you requested for your lawn care in Boston, MA:
 
-**Product:** Lawn Vitality Liquid Lawn Fertilizer
+**Product:** Lawn Vitality Liquid Lawn Fertilizer  
 **Price:** $30.00
 
-**Application Timing Recommendation:**
+**Application Timing Recommendation:**  
 Based on the current weather forecast for Boston:
 - The next few days show a mix of cold temperatures and precipitation (rain expected Jan 22–26).
 - For best results, apply the fertilizer **early morning or evening** when it’s cool and your lawn is well-hydrated.
@@ -35,7 +35,6 @@ Based on the current weather forecast for Boston:
 Since you're in a colder climate, it's best to wait until spring (March–April) for optimal results when grass begins active growth. If your lawn is still green now, applying the fertilizer during a warm spell could help maintain health—but avoid application if frost or snow is expected.
 
 Would you like me to check historical weather trends for Boston to better plan next year’s timing?
-```
 
 Note: This is a weekend project and work in progress. Only `scripts/rag_chatbot.py` has been tested end-to-end.
 Vision features are currently blocked by a PyTorch Windows DLL issue:
